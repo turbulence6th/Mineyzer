@@ -1,0 +1,12 @@
+webmvc:
+  cors:
+    allowed-origins: "http://localhost:5173" # Frontend'in çalıştığı adres (tırnak içinde olması daha güvenli)
+    allowed-methods: GET, POST, PUT, DELETE, OPTIONS
+    allowed-headers: '*'
+    allow-credentials: true # WebSocket/Cookie gerekiyorsa
+
+logging:
+  level:
+    com.codeyzer.mine: DEBUG # Geliştirme ortamında daha detaylı loglama
+    # org.springframework.web: DEBUG # İsteğe bağlı: Spring Web logları
+    # org.hibernate: DEBUG # İleride veritabanı eklenirse

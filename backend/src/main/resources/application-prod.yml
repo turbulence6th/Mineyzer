@@ -1,0 +1,9 @@
+webmvc:
+  cors:
+    allowed-origins: "https://mineyzer.tail9fb8f4.ts.net" # Frontend'in çalıştığı adres (tırnak içinde olması daha güvenli)
+    allowed-methods: GET, POST, PUT, DELETE, OPTIONS
+    allowed-headers: '*'
+    allow-credentials: true # WebSocket/Cookie gerekiyorsa
+logging:
+  level:
+    com.codeyzer.mine: WARN # Üretim ortamında sadece uyarı ve hataları logla
