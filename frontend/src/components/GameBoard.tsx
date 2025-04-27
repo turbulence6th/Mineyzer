@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import Cell from './Cell';
 import { Game, Player } from '../services/GameService';
 import './GameBoard.css';
@@ -15,7 +15,7 @@ interface GameBoardProps {
 
 const GameBoard: React.FC<GameBoardProps> = ({ game, currentPlayer, onMakeMove, onExitGame }) => {
     const [isCurrentPlayerTurn, setIsCurrentPlayerTurn] = useState(false);
-    const [cellSize, setCellSize] = useState(30);
+    const [cellSize] = useState(30);
     const [statusMessage, setStatusMessage] = useState<string>("Oyuna hoş geldiniz!");
 
     useEffect(() => {
@@ -76,7 +76,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ game, currentPlayer, onMakeMove, 
     const isCurrentPlayerWinner = game?.gameOver && game.winnerId !== null && game.winnerId === currentPlayer?.id;
     // const isGameOverAndNotWinner = game?.gameOver && !isCurrentPlayerWinner && game.winnerId !== null; // Bu değişkene gerek kalmadı gibi?
     const isTie = game?.gameOver && game.winnerId === null;
-    const isLost = game?.gameOver && game.winnerId !== null && game.winnerId !== currentPlayer?.id; // Kaybetme durumunu netleştirelim
 
     const revealedMineCount = game?.board.flat().filter(cell => cell.revealed && cell.mine).length ?? 0;
     const remainingMineCount = (game?.mineCount ?? 0) - revealedMineCount;

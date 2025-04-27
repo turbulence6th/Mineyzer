@@ -23,7 +23,7 @@ const Cell: React.FC<CellProps> = ({
     lastMoveRow,
     lastMoveCol 
 }) => {
-    const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const handleClick = (_event: React.MouseEvent<HTMLDivElement>) => {
         const isMyFlag = cell.flaggedByPlayerId && cell.flaggedByPlayerId === currentPlayerId;
         
         if (!cell.revealed && !isMyFlag) {

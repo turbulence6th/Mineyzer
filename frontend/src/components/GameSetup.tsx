@@ -23,7 +23,6 @@ const GameSetup: React.FC<GameSetupProps> = ({ onGameStart }) => {
     const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>('easy');
     const [availableGames, setAvailableGames] = useState<Game[]>([]);
     const { loading, error, wrapAsync, setError } = useLoadingState();
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [isStrategyModalOpen, setIsStrategyModalOpen] = useState(false);
 
     const loadAvailableGames = useCallback(() => {
@@ -35,14 +34,6 @@ const GameSetup: React.FC<GameSetupProps> = ({ onGameStart }) => {
 
     useEffect(() => {
         loadAvailableGames();
-
-        // Ekran boyutunu izle
-        const handleResize = () => {
-            setIsMobile(window.innerWidth <= 768);
-        };
-        
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
     }, [loadAvailableGames]);
 
     const handleCreateGame = useCallback(() => {

@@ -8,7 +8,6 @@ import WebSocketService from './services/WebSocketService'
 function App() {
   const [currentGame, setCurrentGame] = useState<Game | null>(null)
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null)
-  const [username, setUsername] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -20,7 +19,6 @@ function App() {
 
   const handleGameStart = (game: Game, playerUsername: string) => {
     setCurrentGame(game)
-    setUsername(playerUsername)
     
     const player = game.players.find(p => p.username === playerUsername)
     if (player) {
@@ -61,7 +59,6 @@ function App() {
     WebSocketService.disconnect()
     setCurrentGame(null)
     setCurrentPlayer(null)
-    setUsername('')
   }
 
   return (
