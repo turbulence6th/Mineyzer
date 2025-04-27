@@ -1,0 +1,25 @@
+Burada çevrimiçi 2 kişilik mayın tarlası oyunu olacak.
+
+Oyunun Son Kuralları:
+*   Oyuncular sırayla hamle yapar (kapalı bir hücreyi açar).
+*   Her oyuncunun seçilen zorluğa göre belirlenen bir toplam süresi vardır (örn: 8x8 için 30sn, 16x16 için 1.5dk). Süre sadece oyuncunun kendi sırası geldiğinde, hamlesini yapana kadar azalır.
+*   Kapalı bir hücreye sağ tıklayarak bayrak koyulabilir/kaldırılabilir.
+    *   Oyuncular sadece kendi koydukları bayrakları kaldırabilir.
+    *   Bayraklar her iki oyuncu tarafından da görülür ancak kimin koyduğuna göre kenarlık rengi farklıdır (1. Oyuncu: Mavi, 2. Oyuncu: Kırmızı).
+    *   Oyuncular kendi bayrakladıkları hücreleri açamazlar.
+    *   Bayrak koymak/kaldırmak sırayı değiştirmez ve zamanlayıcıyı etkilemez.
+*   Üzerinde sayı yazan güvenli bir hücreyi açmak, o sayı kadar puan kazandırır. Sıra ve zamanlayıcı kontrolü rakibe geçer.
+*   Üzerinde '0' yazan bir hücre açıldığında 0 puan kazandırılır. Bu hücreye komşu '0' hücreleri ve onlara komşu ilk sıradaki sayılı hücreler otomatik olarak açılır (kaskad açılım). Bu otomatik açılım sırasında açılan sayılı hücrelerden ekstra puan kazanılmaz. Sıra ve zamanlayıcı kontrolü rakibe geçer.
+*   Mayın içeren bir hücreyi açmak puan kazandırmaz (0 puan). Sıra ve zamanlayıcı kontrolü rakibe geçer.
+*   Eğer bir oyuncu, rakibinin **yanlış** bayrakladığı (içinde mayın olmayan) bir hücreyi açarsa, bayrağı yanlış koyan rakip 1 puan kaybeder. (Açan oyuncu yine hücredeki sayı kadar puan alır). Sıra ve zamanlayıcı kontrolü rakibe geçer.
+*   Oyun aşağıdaki durumlarda sona erer:
+    *   Tüm mayın olmayan (güvenli) hücreler açıldığında. Bu durumda en yüksek puana sahip oyuncu kazanır. Puanlar eşitse oyun berabere biter.
+    *   Bir oyuncunun toplam süresi bittiğinde. Oyun biter, süresi biten oyuncunun zamanı sıfırlanır. Açılmamış tüm güvenli hücrelerin puan değerleri hesaplanır ve süresi bitmeyen rakibin skoruna eklenir. Son skorlara göre en yüksek puana sahip oyuncu kazanır, eşitlik durumunda berabere biter.
+    *   Bir oyuncunun bağlantısı koptuğunda. Oyunda kalan oyuncu kazanır.
+
+Kod Yapısı:
+frontend dizininde react typescript ile arayüzü yazılacak.
+backend dizininde spring boot ile sunucusu yazılacak.
+
+CMD komutları çalıştırmadan önce bana sor otomatik çalıştırma yapma.
+Komutlar windowsta powershell'de çalıştırılacak.
