@@ -9,7 +9,7 @@ class WebSocketService {
         this.gameUpdateCallback = onGameUpdate;
 
         this.client = new Client({
-            brokerURL: 'ws://localhost:8080/ws',
+            brokerURL: import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:8080/ws',
             debug: function (str) {
                 console.log(str);
             },
