@@ -1,0 +1,89 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #2a2a2a;
+  padding: 25px;
+  border-radius: 10px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+  position: relative;
+  color: #f0f0f0;
+}
+
+.modal-close-button {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  color: #aaa;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-close-button:hover {
+  color: #fff;
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #5d8cc2; /* Ana renk */
+  text-align: center;
+}
+
+.modal-content ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.modal-content li {
+  margin-bottom: 15px;
+  line-height: 1.6;
+}
+
+.modal-content li strong {
+  color: #2a9d8f; /* İkincil renk */
+  margin-right: 5px;
+}
+
+.modal-content p {
+    margin-left: 15px;
+    color: #ccc;
+}
+
+/* Modal içeriği için özel scrollbar */
+.modal-content::-webkit-scrollbar {
+  width: 8px; /* Scrollbar genişliği */
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: #1a1a1a; /* Track (arka plan) rengi */
+  border-radius: 10px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background-color: #555; /* Thumb (kaydırıcı) rengi */
+  border-radius: 10px;
+  border: 2px solid #1a1a1a; /* Track ile aynı renkte kenarlık */
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background-color: #777; /* Hover rengi */
+} 

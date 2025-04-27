@@ -1,0 +1,238 @@
+.game-setup {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.game-setup-title {
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #5d8cc2;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.error-message {
+  padding: 0.8rem;
+  background-color: rgba(198, 40, 40, 0.2);
+  color: #e57373;
+  border-radius: 4px;
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.username-input {
+  margin: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.username-input-label {
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.username-input-field {
+  width: 100%;
+  padding: 0.7rem;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background-color: #2a2a2a;
+  color: #f0f0f0;
+  font-size: 1rem;
+}
+
+.game-creation {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border-radius: 10px;
+  background-color: #1a1a1a;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  width: 100%;
+}
+
+.game-creation-title {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #4caf50;
+  text-align: center;
+}
+
+.game-settings {
+  display: flex;
+  gap: 1rem;
+  margin: 1rem 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.setting {
+  display: flex;
+  flex-direction: column;
+}
+
+.setting-label {
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+}
+
+.setting-input {
+  width: 80px;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #333;
+  background-color: #2a2a2a;
+  color: #f0f0f0;
+}
+
+/* Dropdown için ek stil */
+.difficulty-selector {
+    display: flex;
+    flex-direction: column; /* Label üstte, select altta */
+    align-items: center; /* Ortala */
+    margin: 1rem 0; /* Üst ve alt boşluk */
+}
+
+.difficulty-select {
+    width: 280px; /* Genişlik artırıldı */
+    padding: 0.7rem; /* Username input ile aynı padding */
+    font-size: 1rem; /* Username input ile aynı font boyutu */
+}
+
+.create-game-btn {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: none;
+  background-color: #4caf50;
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+}
+
+.create-game-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.available-games {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border-radius: 10px;
+  background-color: #1a1a1a;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  width: 100%;
+}
+
+.available-games-title {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #3f8cb5;
+  text-align: center;
+}
+
+.refresh-button-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.refresh-button {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  border: none;
+  background-color: #3f8cb5;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.refresh-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.loading-text {
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.games-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.game-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  margin-bottom: 0.8rem;
+  border-radius: 8px;
+  background-color: #222;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.game-info-text {
+  text-align: left;
+}
+
+.join-game-btn {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  border: none;
+  background-color: #3f8cb5;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.join-game-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.no-games-message {
+  text-align: center;
+  margin: 1rem 0;
+}
+
+/* Yeni eklenenler */
+.game-setup-header {
+  margin-bottom: 1.5rem;
+}
+
+/* Başlık sarmalayıcısı - Artık gerekli değil */
+/*
+.title-container {
+  flex-grow: 1; 
+  text-align: center; 
+  /* margin-left: 50px; */ 
+/*
+}
+*/
+
+.strategy-button {
+  padding: 0.5em 1em;
+  font-size: 0.9em;
+  background-color: var(--secondary-color);
+  /* Yeni stiller: Butonu ortala ve boşluk ver */
+  display: block; /* Blok eleman yap */
+  margin: 0 auto 1.5rem auto; /* Üst 0, sağ/sol oto (ortala), alt boşluk */
+  width: fit-content; /* İçeriğe sığdır */
+}
+
+.strategy-button:hover {
+  background-color: #21867a; 
+}
+

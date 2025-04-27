@@ -1,0 +1,307 @@
+.game-board {
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  flex-grow: 1;
+}
+
+.game-info {
+  padding: 2px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4),
+              inset 0 1px 3px rgba(0, 0, 0, 0.5);
+  margin-bottom: 4px;
+  width: 70%;
+  transition: background 0.5s ease;
+}
+
+.game-info-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 5px;
+}
+
+.exit-game {
+  padding: 6px 12px;
+  border-radius: 10px;
+  background-color: #333;
+  color: white;
+  font-weight: bold;
+  border: 1px solid #555;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.exit-game:hover {
+  background-color: #444;
+}
+
+.game-info-normal {
+  /* Daha koyu, mavimsi-gri gradyan */
+  background: linear-gradient(160deg, #28313b 0%, #1f2730 100%); 
+}
+
+.game-info-waiting {
+  /* Hafif sarımsı/kahverengimsi koyu gri gradyan */
+  background: linear-gradient(160deg, #4a453b 0%, #3b362f 100%); 
+}
+
+.game-info-win {
+  /* Koyu yeşilimsi-gri gradyan */
+  background: linear-gradient(160deg, #283b35 0%, #1f302a 100%); 
+}
+
+.game-info-loss {
+  /* Koyu kırmızımsı-gri gradyan */
+  background: linear-gradient(160deg, #4a3b3b 0%, #3b2f2f 100%); 
+}
+
+.turn-indicator {
+  font-weight: bold;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  margin-bottom: 3px;
+  text-align: center;
+}
+
+.turn-indicator-large {
+  font-size: 1.4rem;
+}
+
+.turn-indicator-small {
+  font-size: 1.2rem;
+}
+
+.your-turn {
+  color: #4ade80;
+  animation: pulse 1.5s infinite;
+}
+
+.waiting {
+  color: #fcd34d;
+}
+
+.winner-text {
+  color: #4ade80;
+  animation: pulse 1.5s infinite;
+}
+
+.loser-text {
+  color: #f87171;
+  animation: pulse 1.5s infinite;
+}
+
+.waiting-opponent {
+  color: #f59e0b;
+  animation: pulse 1.5s infinite;
+}
+
+.mine-counter {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 3px;
+  font-weight: bold;
+}
+
+.mine-counter-pill {
+  background-color: #222;
+  padding: 5px 15px;
+  border-radius: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+}
+
+.mine-icon {
+  font-size: 1.2rem;
+}
+
+.scores {
+  display: flex;
+  justify-content: center;
+  margin: 3px 0;
+  align-items: center;
+}
+
+.scores-row {
+  flex-direction: row;
+  gap: 20px;
+}
+
+.scores-column {
+  flex-direction: column;
+  gap: 10px;
+}
+
+.player-score {
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  width: 150px;
+  white-space: nowrap;
+  transition: background 0.5s ease, border-color 0.5s ease, opacity 0.5s ease, box-shadow 0.5s ease;
+}
+
+.player-score-desktop {
+  padding: 10px 15px;
+}
+
+.player-score-mobile {
+  padding: 8px 12px;
+  width: 100%;
+}
+
+.player-score.inactive-player {
+  background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+  border: none;
+}
+
+.player-score.active-player-1 {
+  background: linear-gradient(135deg, #1e3a5f 0%, #3b82f6 100%);
+  border: 2px solid #60a5fa;
+  animation: activePlayerGlow 2s infinite ease-in-out;
+}
+
+.player-score.active-player-2 {
+  background: linear-gradient(135deg, #5f1e1e 0%, #e53935 100%);
+  border: 2px solid #f87171;
+  animation: activePlayerGlow 2s infinite ease-in-out;
+}
+
+.player-score-winner {
+  background: linear-gradient(135deg, #1e553f 0%, #4ade80 100%);
+  border: 2px solid #4ade80;
+}
+
+.player-score-loser {
+  background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+  border: none;
+  opacity: 0.7;
+}
+
+.player-name {
+  font-weight: 600;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+  display: inline-block;
+  max-width: 100px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.score {
+  margin-left: 5px;
+  font-size: 1.2rem;
+  color: #f0f0f0;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+  vertical-align: middle;
+}
+
+.score-winner {
+  color: #98fb98;
+}
+
+.status-message {
+  margin-top: 10px;
+  padding: 5px;
+  font-size: 0.9rem;
+  min-height: 1.2rem;
+  color: #d4d4d4;
+  text-align: center;
+  font-style: italic;
+  transition: color 0.3s ease;
+}
+
+.waiting-message {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #d4d4d4;
+}
+
+.board-container {
+  margin-top: 15px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  flex-grow: 1;
+}
+
+.board {
+  display: grid;
+  gap: 4px;
+  background: #1a1a1a;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.board-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  z-index: 10;
+  cursor: not-allowed;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Orta sırayı yatay yapar */
+.game-info-middle-row {
+  display: flex;
+  justify-content: space-between; /* Uçlara yasla, ortayı ortala */
+  align-items: center; /* Dikeyde ortalar */
+  width: 100%;
+  margin: 5px 0;
+}
+
+/* Orta sıradaki elemanlar için ek stiller */
+.game-info-middle-row > .turn-indicator {
+  flex: 1; /* Boşluğu doldur */
+  text-align: center; /* Metni ortala (veya left) */
+}
+
+.game-info-middle-row > .mine-counter {
+  flex-shrink: 0; /* Küçülmesini engelle */
+}
+
+.game-info-middle-row > .scores {
+  flex: 1; /* Boşluğu doldur */
+  justify-content: center; /* Skorları kendi içinde ortala (veya flex-end) */
+}
+
+/* Aktif oyuncu parlama animasyonu */
+@keyframes activePlayerGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 255, 255, 0.3), 0 2px 10px rgba(0, 0, 0, 0.2); }
+  50% { box-shadow: 0 0 16px rgba(255, 255, 255, 0.5), 0 2px 10px rgba(0, 0, 0, 0.2); }
+}
+
+/* Yeni: Skor ve Saati içeren sarmalayıcı */
+.player-info-container {
+  display: flex;
+  flex-direction: column; /* Skor üstte, saat altta */
+  align-items: center; /* İçeriği ortala */
+  gap: 5px; /* Skor ve saat arası boşluk */
+}

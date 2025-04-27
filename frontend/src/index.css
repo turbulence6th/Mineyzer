@@ -1,0 +1,277 @@
+:root {
+  /* Koyu tema için renk şeması */
+  --primary-color: #5d8cc2;
+  --secondary-color: #2a9d8f;
+  --background-color: #121212;
+  --text-color: #f0f0f0;
+  --border-color: #333;
+  --cell-unrevealed: #2c2c2c;
+  --cell-revealed: #3a3a3a;
+  --cell-mine: #e76f6f;
+  --cell-flag: #4caf50;
+  --hover-color: #444;
+
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color: var(--text-color);
+  background-color: var(--background-color);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--background-color);
+}
+
+h1 {
+  font-size: 2.5em;
+  line-height: 1.1;
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+}
+
+h2 {
+  font-size: 1.5em;
+  margin: 1rem 0;
+  color: var(--secondary-color);
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: var(--primary-color);
+  color: white;
+  cursor: pointer;
+  transition: border-color 0.25s, background-color 0.25s;
+}
+
+button:hover {
+  background-color: #4a6fa5;
+}
+
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+button:disabled {
+  background-color: #444;
+  color: #888;
+  cursor: not-allowed;
+}
+
+input {
+  padding: 0.5em;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 1em;
+  background-color: #2a2a2a;
+  color: var(--text-color);
+}
+
+/* Oyun Kurulumu */
+.game-setup {
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+  width: 100%;
+}
+
+.username-input {
+  margin: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.username-input label {
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.username-input input {
+  width: 100%;
+  padding: 0.5rem;
+}
+
+.game-creation, .available-games {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: #1a1a1a;
+  text-align: left;
+}
+
+.game-settings {
+  display: flex;
+  gap: 1rem;
+  margin: 1rem 0;
+  flex-wrap: wrap;
+}
+
+.setting {
+  display: flex;
+  flex-direction: column;
+}
+
+.setting label {
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+}
+
+.setting input {
+  width: 80px;
+}
+
+.create-game-btn {
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.games-list {
+  list-style: none;
+  margin-top: 1rem;
+}
+
+.game-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: #222;
+}
+
+.error-message {
+  padding: 0.8rem;
+  background-color: rgba(198, 40, 40, 0.2);
+  color: #e57373;
+  border-radius: 4px;
+  margin: 1rem 0;
+  text-align: center;
+}
+
+/* Oyun Tahtası */
+.game-container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.game-header h1 {
+  margin-bottom: 0;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+  }
+
+  .game-container {
+    padding: 0.8rem;
+  }
+
+  .game-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .player-info, .exit-game {
+    font-size: 0.9rem;
+    margin: 0.5rem 0;
+  }
+
+  .scores {
+    gap: 1rem;
+  }
+
+  .player-score {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-container {
+    padding: 0.5rem;
+  }
+
+  .turn-indicator {
+    font-size: 1rem;
+  }
+
+  .scores {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .player-score {
+    width: 100%;
+    margin: 0.3rem 0;
+  }
+}
