@@ -18,8 +18,16 @@ Oyunun Son Kuralları:
     *   Bir oyuncunun bağlantısı koptuğunda. Oyunda kalan oyuncu kazanır.
 
 Kod Yapısı:
-frontend dizininde react typescript ile arayüzü yazılacak.
-backend dizininde spring boot ile sunucusu yazılacak.
+*   `frontend` dizininde `react` `typescript` ile arayüz yazılacak.
+    *   `react-router-dom` ile yönlendirme (routing) yönetilecek (`/` ve `/:gameId` rotaları).
+    *   Ana yönlendirme ve oyun durumu `App.tsx` içinde yönetilecek.
+    *   `GameSetup.tsx` kullanıcı adı girişini ve URL'ye göre hangi alt bileşenin gösterileceğini belirleyecek.
+    *   `CreateOrJoinGame.tsx` yeni oyun oluşturma ve mevcut oyunları listeleme/katılma arayüzünü (`/` rotası için) içerecek.
+    *   `JoinGameById.tsx` belirli bir oyuna (`/:gameId` rotası) katılma arayüzünü içerecek.
+    *   `GameBoard.tsx` oyun tahtası arayüzünü ve oyun içi etkileşimleri yönetecek.
+    *   WebSocket bağlantısı `WebSocketService.ts` ile yönetilecek.
+    *   Backend ile iletişim `GameService.ts` üzerinden yapılacak.
+*   `backend` dizininde `spring boot` ile sunucusu yazılacak.
 
 CMD komutları çalıştırmadan önce bana sor otomatik çalıştırma yapma.
 Komutlar windowsta powershell'de çalıştırılacak.
