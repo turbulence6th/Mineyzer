@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Game, GameService, Player } from '../services/GameService';
+import { Game, GameService } from '../services/GameService';
 import { useLoadingState } from '../hooks/useLoadingState';
 import './GameSetup.css'; // Stil dosyasını GameSetup ile paylaşabiliriz
 

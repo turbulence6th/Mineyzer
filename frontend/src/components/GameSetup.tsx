@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import './GameSetup.css';
 import StrategyModal from './StrategyModal';
 import JoinGameById from './JoinGameById';
 import CreateOrJoinGame from './CreateOrJoinGame';
+import { Game } from '../services/GameService';
 
 interface GameSetupProps {
-    onGameStart: (game: any, username: string) => void;
+    onGameStart: (game: Game, username: string) => void;
 }
 
 const GameSetup: React.FC<GameSetupProps> = ({ onGameStart }) => {
