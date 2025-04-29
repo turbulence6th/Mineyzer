@@ -18,6 +18,7 @@ export interface Player {
     id: string;
     username: string;
     score: number;
+    ready?: boolean;
 }
 
 export interface Game {
@@ -36,6 +37,7 @@ export interface Game {
     player2TimeLeftMillis: number;
     winnerId?: string | null;
     turnStartTimeMillis?: number;
+    status: 'WAITING_FOR_PLAYERS' | 'WAITING_FOR_READY' | 'IN_PROGRESS' | 'GAME_OVER';
 }
 
 export const GameService = {
@@ -66,6 +68,11 @@ export const GameService = {
 
     toggleFlag: async (gameId: string, playerId: string, row: number, col: number): Promise<Game> => {
         const response = await axios.post(`${API_ENDPOINT}/${gameId}/flag`, { playerId, row, col });
+        return response.data;
+    },
+
+    markPlayerReady: async (gameId: string, playerId: string): Promise<Game> => {
+        const response = await axios.post(`${API_ENDPOINT}/${gameId}/ready`, { playerId });
         return response.data;
     }
 }; 

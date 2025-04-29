@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './App.css'
 import GameSetup from './components/GameSetup'
 import GameBoard from './components/GameBoard'
@@ -9,6 +10,7 @@ function App() {
   const [currentGame, setCurrentGame] = useState<Game | null>(null)
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     return () => {
@@ -59,6 +61,7 @@ function App() {
     WebSocketService.disconnect()
     setCurrentGame(null)
     setCurrentPlayer(null)
+    navigate('/')
   }
 
   return (

@@ -7,6 +7,8 @@ interface CellProps {
     onClick: (row: number, col: number) => void;
     onToggleFlag: (row: number, col: number) => void;
     isCurrentPlayerTurn: boolean;
+    canToggleFlag: boolean;
+    disabled: boolean;
     firstPlayerId?: string;
     currentPlayerId?: string;
     lastMoveRow: number;
@@ -18,22 +20,28 @@ const Cell: React.FC<CellProps> = ({
     onClick, 
     onToggleFlag, 
     isCurrentPlayerTurn, 
+    canToggleFlag,
+    disabled,
     firstPlayerId, 
     currentPlayerId,
     lastMoveRow,
     lastMoveCol 
 }) => {
     const handleClick = () => {
+        if (disabled || cell.revealed) return;
         const isMyFlag = cell.flaggedByPlayerId && cell.flaggedByPlayerId === currentPlayerId;
-        
-        if (!cell.revealed && !isMyFlag) {
+        if (isMyFlag) return;
+
+        if (isCurrentPlayerTurn) {
             onClick(cell.row, cell.column);
         }
     };
 
     const handleContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
         event.preventDefault();
-        if (!cell.revealed && isCurrentPlayerTurn) {
+        if (disabled || cell.revealed) return;
+
+        if (canToggleFlag) {
             onToggleFlag(cell.row, cell.column);
         }
     };
@@ -86,6 +94,10 @@ const Cell: React.FC<CellProps> = ({
              className += ' last-move';
         }
 
+        if (disabled) {
+            className += ' disabled';
+        }
+
         return className;
     };
 
@@ -95,7 +107,7 @@ const Cell: React.FC<CellProps> = ({
             onClick={handleClick}
             onContextMenu={handleContextMenu}
             style={{
-                cursor: cell.revealed ? 'default' : (isCurrentPlayerTurn ? 'pointer' : 'not-allowed')
+                cursor: !disabled && !cell.revealed && (isCurrentPlayerTurn || canToggleFlag) ? 'pointer' : 'default'
             }}
         >
             {getCellContent()}

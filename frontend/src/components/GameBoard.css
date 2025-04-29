@@ -305,3 +305,51 @@
   align-items: center; /* İçeriği ortala */
   gap: 5px; /* Skor ve saat arası boşluk */
 }
+
+.ready-status {
+  font-size: 0.85rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-bottom: 3px;
+  font-weight: bold;
+}
+
+.ready-status.ready {
+  background-color: rgba(74, 222, 128, 0.2); /* Yeşil arka plan */
+  color: #4ade80; /* Yeşil yazı */
+  border: 1px solid #4ade80;
+}
+
+.ready-status.not-ready {
+  background-color: rgba(252, 211, 77, 0.2); /* Sarı arka plan */
+  color: #fcd34d; /* Sarı yazı */
+  border: 1px solid #fcd34d;
+}
+
+.ready-button {
+  margin-left: 15px;
+  padding: 8px 18px;
+  border-radius: 15px;
+  background: linear-gradient(145deg, #4caf50, #388e3c);
+  color: white;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.1s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  font-size: 0.95rem;
+}
+
+.ready-button:hover {
+  background: linear-gradient(145deg, #5cb860, #43a047);
+}
+
+.ready-button:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.cell.disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
