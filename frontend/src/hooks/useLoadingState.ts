@@ -20,16 +20,21 @@ export function useLoadingState() {
     try {
       const result = await asyncFn();
       return result;
-    } catch (err: any) {
+    } catch (err: unknown) {
       const defaultMessage = 'İşlem sırasında bir hata oluştu.';
       console.error(errorMessage || defaultMessage, err);
-      // Axios hatalarını daha iyi yakalamaya çalışalım
+      
       let displayError = errorMessage || defaultMessage;
-      if (err.response && err.response.data && typeof err.response.data === 'string') {
-        displayError = err.response.data; // Backend'den gelen hata mesajı?
-      } else if (err.message) {
+      // Hata nesnesinin yapısını kontrol ederek özelliklere güvenli erişim
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+        const response = err.response; // Daha güvenli erişim için tip ataması (veya daha spesifik tip guard)
+        if (response && typeof response === 'object' && 'data' in response && typeof response.data === 'string') {
+          displayError = response.data; // Backend'den gelen hata mesajı?
+        }
+      } else if (err instanceof Error) { // Standart Error nesnesi mi kontrol et
         displayError = err.message; // Genel JS hatası
       }
+      
       setError(displayError);
       return undefined; // Hata durumunda undefined döndür
     } finally {

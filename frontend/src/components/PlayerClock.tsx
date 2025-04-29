@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './PlayerClock.css';
 
 interface PlayerClockProps {
@@ -36,7 +36,7 @@ const PlayerClock: React.FC<PlayerClockProps> = ({ timeLeftMillis, isActive, tur
   }, [timeLeftMillis, turnStartTimeMillis, isActive]);
 
   // Animasyon döngüsü fonksiyonu
-  const animate = (time: number) => {
+  const animate = useCallback((time: number) => {
     if (previousTimeRef.current !== undefined) {
       // Şu anki zamanı hesapla
       const now = Date.now();
@@ -69,7 +69,7 @@ const PlayerClock: React.FC<PlayerClockProps> = ({ timeLeftMillis, isActive, tur
          requestRef.current = requestAnimationFrame(animate);
     }
     previousTimeRef.current = time;
-  };
+  }, []); // Bağımlılık dizisi boş, çünkü ref'ler ve setDisplayMillis stabil
 
   // Animasyonu başlatma/durdurma effect'i
   useEffect(() => {
@@ -96,7 +96,7 @@ const PlayerClock: React.FC<PlayerClockProps> = ({ timeLeftMillis, isActive, tur
         cancelAnimationFrame(requestRef.current);
       }
     };
-  }, [isActive]); // Sadece isActive değiştiğinde animasyonu başlat/durdur
+  }, [isActive, animate]); // 'animate' bağımlılığını ekle
 
   const isLowTime = displayMillis <= 10 * 1000 && displayMillis > 0; // 10 saniyenin altı
 
