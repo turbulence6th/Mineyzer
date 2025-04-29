@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static com.codeyzer.mine.model.GameStatus.*;
+
 @Getter
 @Setter
 public class Game {
@@ -15,7 +17,7 @@ public class Game {
     private int rows;
     private int columns;
     private int mineCount;
-    private boolean isGameOver;
+    private GameStatus status;
     private String currentTurn;
     private List<Player> players = new ArrayList<>();
     private List<List<Cell>> board = new ArrayList<>();
@@ -38,8 +40,7 @@ public class Game {
         this.rows = rows;
         this.columns = columns;
         this.mineCount = mineCount;
-        this.isGameOver = false;
-        // Board ve Süreler burada set EDİLMEZ, GameService'de edilecek.
+        this.status = WAITING_FOR_PLAYERS;
         this.lastEventMessage = "Oyun oluşturuldu, rakip bekleniyor.";
     }
     
@@ -55,16 +56,18 @@ public class Game {
     }
 
     public boolean joinGame(Player player) {
-        if (players.size() < 2) {
+        if (players.size() < 2 && this.status == WAITING_FOR_PLAYERS) {
             players.add(player);
             
             // İlk oyuncu eklendiğinde sırayı ona ver
             if (players.size() == 1) {
                 currentTurn = player.getId();
+                this.lastEventMessage = player.getUsername() + " oyuna katıldı. Rakip bekleniyor.";
             } else if (players.size() == 2) {
-                // İkinci oyuncu katıldığında zamanı GameService başlatacak
-                this.turnStartTimeMillis = System.currentTimeMillis();
-                this.lastEventMessage = player.getUsername() + " oyuna katıldı. Oyun başlıyor!";
+                // İkinci oyuncu katıldığında durumu WAITING_FOR_READY yap
+                this.status = WAITING_FOR_READY;
+                // turnStartTimeMillis VE currentTurn GameService.startGameIfReady tarafından ayarlanacak
+                this.lastEventMessage = player.getUsername() + " oyuna katıldı. Hazır olmanız bekleniyor.";
             }
             
             return true;
@@ -76,7 +79,7 @@ public class Game {
      * Sıradaki oyuncuya geçer.
      */
     public void switchTurn() {
-        if (players.size() == 2) { // Sadece 2 oyuncu varsa sıra değişir
+        if (players.size() == 2 && this.status == IN_PROGRESS) {
             if (currentTurn.equals(players.get(0).getId())) {
                 currentTurn = players.get(1).getId();
             } else {
@@ -92,15 +95,16 @@ public class Game {
      * @return Oyuncu bulunursa Player nesnesi, bulunamazsa null.
      */
     public Player getPlayerById(String playerId) {
-        for (Player player : players) {
-            if (player.getId().equals(playerId)) {
-                return player;
-            }
-        }
-        return null;
+        return players.stream()
+                      .filter(p -> p.getId().equals(playerId))
+                      .findFirst()
+                      .orElse(null);
     }
     
     public boolean isGameFinished() {
+        if (this.status != IN_PROGRESS) {
+            return false;
+        }
         for (List<Cell> row : board) {
             for (Cell cell : row) {
                 if (!cell.isMine() && !cell.isRevealed()) {
@@ -118,8 +122,6 @@ public class Game {
      */
     @Deprecated
     public Player getWinner() {
-        // Bu metodun içeriği artık geçerli değil, null döndürmek daha güvenli olabilir
-        // veya skora göre hala bir kazanan döndürebilir ama kullanılmamalı.
         if (players.isEmpty()) return null;
         if (players.size() == 1) return players.get(0);
         // Skor bazlı basit kontrol (eski mantık, kullanılmamalı)
@@ -137,7 +139,7 @@ public class Game {
      * @return İşlem başarılıysa true (bayrak kondu veya kaldırıldı), aksi halde false.
      */
     public boolean toggleFlag(String playerId, int row, int col) {
-        if (isGameOver) { return false; }
+        if (this.status != IN_PROGRESS) { return false; }
         if (row < 0 || row >= rows || col < 0 || col >= columns) { return false; }
         Cell cell = board.get(row).get(col);
         if (cell.isRevealed()) { return false; } // Açık hücreye bayrak konmaz
@@ -159,5 +161,13 @@ public class Game {
         }
         // Bayrak değiştirme mesajı GameService'te loglanabilir.
         return toggled;
+    }
+
+    /** 
+     * Oyunun bitip bitmediğini kontrol eder. (status alanına göre)
+     * @return Oyun bitmişse true, aksi halde false.
+     */
+    public boolean isGameOver() {
+        return this.status == GAME_OVER;
     }
 } 

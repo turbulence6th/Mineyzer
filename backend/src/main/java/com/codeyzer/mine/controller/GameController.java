@@ -8,6 +8,7 @@ import com.codeyzer.mine.dto.GameConfigDTO;
 import com.codeyzer.mine.dto.JoinGameRequestDTO;
 import com.codeyzer.mine.dto.MakeMoveRequestDTO;
 import com.codeyzer.mine.dto.ToggleFlagRequestDTO;
+import com.codeyzer.mine.dto.PlayerIdRequestDTO;
 import com.codeyzer.mine.model.Game;
 import com.codeyzer.mine.service.GameService;
 import lombok.RequiredArgsConstructor;
@@ -95,6 +96,21 @@ public class GameController {
 
         Game updatedGame = gameService.toggleFlag(gameId, playerId, row, col);
         
+        if (updatedGame != null) {
+            return ResponseEntity.ok(updatedGame);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/{gameId}/ready")
+    public ResponseEntity<Game> markPlayerReady(@PathVariable String gameId, @RequestBody PlayerIdRequestDTO request) {
+        String playerId = request.getPlayerId();
+        if (playerId == null || playerId.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        Game updatedGame = gameService.markPlayerReady(gameId, playerId);
         if (updatedGame != null) {
             return ResponseEntity.ok(updatedGame);
         } else {

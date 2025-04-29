@@ -12,6 +12,7 @@ public class Player {
     
     private String username;
     private int score;
+    private boolean ready = false;
     
     public Player() {
         // Boş constructor
@@ -21,6 +22,7 @@ public class Player {
         this.id = UUID.randomUUID().toString();
         this.username = username;
         this.score = 0;
+        this.ready = false;
     }
     
     public void increaseScore(int amount) {

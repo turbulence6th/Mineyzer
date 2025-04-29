@@ -3,7 +3,8 @@ package com.codeyzer.mine.service;
 import com.codeyzer.mine.model.Cell;
 import com.codeyzer.mine.model.Game;
 import com.codeyzer.mine.model.Player; // Gerekirse eklenebilir
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -11,8 +12,9 @@ import java.util.List;
 import java.util.Random;
 
 @Service
-@Slf4j
 public class BoardService {
+
+    private static final Logger log = LoggerFactory.getLogger(BoardService.class);
 
     /**
      * Verilen boyutlarda boş bir oyun tahtası listesi oluşturur.
@@ -215,8 +217,8 @@ public class BoardService {
         }
         int rows = board.size();
         int columns = board.get(0).size();
-        int totalCells = rows * columns;
         int revealedSafeCells = 0;
+        int totalCells = rows * columns;
         int totalSafeCells = totalCells - mineCount;
 
         // Tahtada mayın sayısı beklenenden fazla veya az ise (potansiyel hata), bitirme
@@ -241,5 +243,29 @@ public class BoardService {
         boolean finished = revealedSafeCells >= totalSafeCells;
         log.trace("isGameFinished check: Revealed safe cells = {}, Total safe cells = {}, Finished = {}", revealedSafeCells, totalSafeCells, finished);
         return finished;
+    }
+
+    /**
+     * Tahtada kalan (açılmamış, mayın olmayan) hücrelerin toplam puan değerini hesaplar.
+     * @param board Oyun tahtası.
+     * @return Kalan toplam puan.
+     */
+    public int calculateRemainingPoints(List<List<Cell>> board) {
+        if (board == null || board.isEmpty()) {
+            return 0;
+        }
+        int remainingPoints = 0;
+        log.debug("Calculating remaining points on the board.");
+        for (List<Cell> row : board) {
+            for (Cell cell : row) {
+                // Sadece açılmamış ve mayın olmayan hücreleri say
+                if (!cell.isRevealed() && !cell.isMine()) {
+                    // Kalan puan hücrenin komşu mayın sayısıdır
+                    remainingPoints += cell.getAdjacentMines();
+                }
+            }
+        }
+        log.debug("Total remaining points calculated: {}", remainingPoints);
+        return remainingPoints;
     }
 } 

@@ -2,56 +2,58 @@ package com.codeyzer.mine.service;
 
 import com.codeyzer.mine.repository.InMemoryGameRepository;
 import com.codeyzer.mine.controller.WebSocketController;
-import com.codeyzer.mine.model.Game;
-import com.codeyzer.mine.model.Player;
-import com.codeyzer.mine.model.Cell;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import com.codeyzer.mine.model.*;
+import static com.codeyzer.mine.model.GameStatus.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
 @Service
-@Slf4j
 public class GameService {
 
+    private static final Logger log = LoggerFactory.getLogger(GameService.class);
     private final InMemoryGameRepository gameRepository;
     private final WebSocketController webSocketController;
     private final BoardService boardService;
 
+    @Autowired
+    public GameService(InMemoryGameRepository gameRepository, WebSocketController webSocketController, BoardService boardService) {
+        this.gameRepository = gameRepository;
+        this.webSocketController = webSocketController;
+        this.boardService = boardService;
+    }
+
     public Game createGame(int rows, int columns, int mineCount) {
         Game newGame = new Game(rows, columns, mineCount);
         
-        // Zorluk seviyesine göre başlangıç süresini belirle
         long initialTimeMillis;
-        if (rows == 8 && columns == 8 && mineCount == 10) { // Kolay (8x8)
-            initialTimeMillis = 30 * 1000; // 30 Saniye
-        } else if (rows == 16 && columns == 16 && mineCount == 40) { // Orta (16x16)
-            initialTimeMillis = 90 * 1000; // 90 Saniye (1.5 Dakika)
-        } else if (rows == 16 && columns == 20 && mineCount == 60) { // Zor (16x20)
-            initialTimeMillis = 105 * 1000; // 105 Saniye (1.75 Dakika)
-        } else if (rows == 20 && columns == 24 && mineCount == 99) { // Çok Zor (20x24)
-            initialTimeMillis = 150 * 1000; // 150 Saniye (2.5 Dakika)
+        if (rows == 8 && columns == 8 && mineCount == 10) {
+            initialTimeMillis = 30 * 1000;
+        } else if (rows == 16 && columns == 16 && mineCount == 40) {
+            initialTimeMillis = 90 * 1000;
+        } else if (rows == 16 && columns == 20 && mineCount == 60) {
+            initialTimeMillis = 105 * 1000;
+        } else if (rows == 20 && columns == 24 && mineCount == 99) {
+            initialTimeMillis = 150 * 1000;
         } else {
-            // Eşleşmeyen veya özel ayarlar için varsayılan süre (örn: 1.5dk)
             log.warn("Unknown or custom difficulty settings ({}x{}, {} mines), defaulting to 1.5 minutes.", rows, columns, mineCount);
-            initialTimeMillis = 90 * 1000; // Varsayılan 90 saniye
+            initialTimeMillis = 90 * 1000;
         }
         
-        // Belirlenen süre ile oyunu başlat
         newGame.initializeTime(initialTimeMillis);
         
-        // Board'u oluştur ve mayınları yerleştir (BoardService kullanarak)
         List<List<Cell>> board = boardService.initializeBoard(rows, columns);
         boardService.placeMines(board, rows, columns, mineCount);
-        newGame.setBoard(board); // Lombok setter ile set et
+        newGame.setBoard(board);
         
         Game savedGame = gameRepository.save(newGame);
-        webSocketController.broadcastGameUpdate(savedGame); // broadcast yerine sadece oluşturana gönderilebilir mi?
         return savedGame;
     }
 
@@ -68,358 +70,343 @@ public class GameService {
 
         if (gameOptional.isPresent()) {
             Game game = gameOptional.get();
-            // Oyuna sadece başlamadıysa ve yer varsa katıl
-            if (!game.isGameOver() && game.getPlayers().size() < 2) {
+            if (game.getStatus() == WAITING_FOR_PLAYERS && game.getPlayers().size() < 2) {
                 Player newPlayer = new Player(username);
                 if (game.joinGame(newPlayer)) {
-                    // İkinci oyuncu katıldığında ve sıra ilk oyuncudaysa zamanı başlat
-                    if (game.getPlayers().size() == 2 && game.getCurrentTurn().equals(game.getPlayers().get(0).getId())) {
-                        game.setTurnStartTimeMillis(System.currentTimeMillis());
-                    }
                     Game savedGame = gameRepository.save(game);
                     webSocketController.broadcastGameUpdate(savedGame);
                     return savedGame;
                 }
             } else {
-                log.warn("Cannot join game {}. Game over: {}, Player count: {}", gameId, game.isGameOver(), game.getPlayers().size());
+                log.warn("Cannot join game {}. Status: {}, Player count: {}", gameId, game.getStatus(), game.getPlayers().size());
             }
         }
-        return null; // Oyun bulunamadı veya katılma başarısız oldu
+        return null;
+    }
+
+    public Game markPlayerReady(String gameId, String playerId) {
+        Optional<Game> gameOptional = gameRepository.findById(gameId);
+        if (gameOptional.isEmpty()) {
+            log.error("Game not found with ID: {} while marking player ready", gameId);
+            return null;
+        }
+
+        Game game = gameOptional.get();
+
+        if (game.getStatus() != WAITING_FOR_READY) {
+            log.warn("Cannot mark player {} ready for game {}: Game status is not WAITING_FOR_READY (current: {})", playerId, gameId, game.getStatus());
+            return game;
+        }
+
+        Player player = game.getPlayerById(playerId);
+        if (player == null) {
+            log.error("Player {} not found in game {} while marking ready", playerId, gameId);
+            return null;
+        }
+
+        if (!player.isReady()) {
+            player.setReady(true);
+            game.setLastEventMessage(player.getUsername() + " hazır.");
+            log.info("Player {} marked as ready in game {}", player.getUsername(), gameId);
+
+            boolean allReady = game.getPlayers().stream().allMatch(Player::isReady);
+            if (game.getPlayers().size() == 2 && allReady) {
+                startGame(game);
+            }
+
+            Game savedGame = gameRepository.save(game);
+            webSocketController.broadcastGameUpdate(savedGame);
+            return savedGame;
+        } else {
+            log.warn("Player {} was already marked as ready in game {}", player.getUsername(), gameId);
+            return game;
+        }
+    }
+
+    private void startGame(Game game) {
+        if (game.getStatus() == WAITING_FOR_READY && game.getPlayers().size() == 2) {
+            game.setStatus(IN_PROGRESS);
+            game.setCurrentTurn(game.getPlayers().get(0).getId());
+            game.setTurnStartTimeMillis(System.currentTimeMillis());
+            game.setLastEventMessage("Tüm oyuncular hazır. Oyun başladı! Sıra: " + game.getPlayers().get(0).getUsername());
+            log.info("Game {} started. First turn: {}", game.getId(), game.getPlayers().get(0).getUsername());
+        }
     }
 
     public Game makeMove(String gameId, String playerId, int row, int col) {
         Optional<Game> gameOptional = gameRepository.findById(gameId);
 
-        if (gameOptional.isPresent()) {
-            Game game = gameOptional.get();
+        if (gameOptional.isEmpty()) return null;
+        Game game = gameOptional.get();
 
-            // 1. Ön Kontroller (Oyun bitti mi? Sıra oyuncuda mı?)
-            if (game.isGameOver()) {
-                log.warn("Invalid move: Game {} is already over.", gameId);
-                return null; // Veya mevcut game durumu
-            }
-            if (!game.getCurrentTurn().equals(playerId)) {
-                log.warn("Invalid move: Not player {}'s turn in game {}. Current turn: {}", playerId, gameId, game.getCurrentTurn());
-                return null; // Veya mevcut game durumu
-            }
-
-            Player activePlayer = game.getPlayerById(playerId);
-            if (activePlayer == null) { // Güvenlik kontrolü
-                log.error("Player {} not found in game {} during makeMove", playerId, gameId);
-                return null;
-            }
-
-            // 2. Çekirdek Hamle Mantığı (BoardService)
-            BoardService.RevealResult revealResult = boardService.revealCell(game, playerId, row, col);
-
-            // 3. Hamle Geçerli miydi? (BoardService kontrol etti)
-            if (!revealResult.moveSuccess) {
-                log.warn("Invalid move logic detected by BoardService for Player {} at ({}, {}) in Game {}", playerId, row, col, gameId);
-                return null; // Geçersiz hamle (zaten açık, kendi bayrağı vb.)
-            }
-
-            // 4. Hamle Sonuçlarını İşle
-            long timeNowAfterMove = System.currentTimeMillis();
-            long timeSpentThisTurn = timeNowAfterMove - game.getTurnStartTimeMillis();
-
-            String message = "";
-            String penaltyMessage = "";
-
-            //  4a. Rakip Bayrağı Açıldıysa Ceza
-            if (revealResult.revealedOpponentFlagOwnerId != null) {
-                Player opponent = game.getPlayerById(revealResult.revealedOpponentFlagOwnerId);
-                if (opponent != null) {
-                    int previousOpponentScore = opponent.getScore();
-                    opponent.decreaseScore(1); // Skoru düşür
-                    int scoreChange = opponent.getScore() - previousOpponentScore;
-                    if (scoreChange < 0) {
-                        penaltyMessage = " Rakip (" + opponent.getUsername() + ") yanlış bayraktan " + scoreChange + " puan kaybetti.";
-                    } else {
-                        penaltyMessage = " Rakip (" + opponent.getUsername() + ") yanlış bayrak açtı (skoru zaten 0 idi).";
-                    }
-                }
-            }
-
-            //  4b. Puanlama ve Mesaj Oluşturma
-            if (revealResult.mineHit) {
-                message = activePlayer.getUsername() + " bir mayına bastı! (0 Puan)";
-                log.info("Player {} hit a mine in game {}. Turn passes.", activePlayer.getUsername(), gameId);
-            } else {
-                // Güvenli hücre
-                int pointsGained = revealResult.pointsGained;
-                if (pointsGained > 0) {
-                    int previousPlayerScore = activePlayer.getScore();
-                    activePlayer.increaseScore(pointsGained); // Skoru artır
-                    message = activePlayer.getUsername() + " " + (activePlayer.getScore() - previousPlayerScore) + " puan değerinde bir hücre açtı.";
-                } else {
-                    // Kaskad tetiklendi (0 puan)
-                    message = activePlayer.getUsername() + " güvenli bir bölge açtı.";
-                }
-            }
-            if (!penaltyMessage.isEmpty()) { // Ceza mesajını ekle
-                message += penaltyMessage;
-            }
-            game.setLastEventMessage(message);
-
-            //  4c. Son Hamle Koordinatlarını Güncelle
-            game.setLastMoveRow(row);
-            game.setLastMoveCol(col);
-
-            // 5. Zamanı Düşür
-            boolean isPlayer1 = activePlayer.getId().equals(game.getPlayers().get(0).getId());
-            if (isPlayer1) {
-                long newTimeLeft = game.getPlayer1TimeLeftMillis() - timeSpentThisTurn;
-                game.setPlayer1TimeLeftMillis(Math.max(0, newTimeLeft));
-            } else {
-                long newTimeLeft = game.getPlayer2TimeLeftMillis() - timeSpentThisTurn;
-                game.setPlayer2TimeLeftMillis(Math.max(0, newTimeLeft));
-            }
-
-            // 6. Oyun Bitti mi Kontrolü
-            boolean justFinished = false;
-            if (revealResult.mineHit) {
-                // Mayına basıldı! Oyunu bitirme, sadece mesajı ayarla ve sırayı geçir.
-                // game.setGameOver(true); // <<< KALDIRILDI
-                // Player winner = game.getPlayers().stream().filter(p -> !p.getId().equals(playerId)).findFirst().orElse(null); // <<< KALDIRILDI
-                // if (winner != null) { // <<< KALDIRILDI
-                //     game.setWinnerId(winner.getId()); // <<< KALDIRILDI
-                //     log.info("Game {} ended. Player {} hit a mine. Winner: {}.", gameId, activePlayer.getUsername(), winner.getUsername()); // <<< LOG DEĞİŞECEK
-                // } else { // <<< KALDIRILDI
-                //     game.setWinnerId(null); // <<< KALDIRILDI
-                //     log.info("Game {} ended. Player {} hit a mine. No opponent found.", gameId, activePlayer.getUsername()); // <<< LOG DEĞİŞECEK
-                // }
-                // justFinished = true; // <<< KALDIRILDI (Oyun bitmedi)
-            } else {
-                // Mayına basılmadı, tüm güvenli hücreler açıldı mı kontrol et
-                if (boardService.isGameFinished(game.getBoard(), game.getMineCount())) {
-                    checkAndUpdateGameOverNormal(game); // Bu metod gameOver ve winnerId'yi ayarlar
-                    justFinished = game.isGameOver(); // checkAndUpdate... metodu ayarladıysa true olur
-                }
-            }
-
-            // 7. Sıra Değiştirme ve Tur Zamanı Ayarlama (Oyun Bitmediyse)
-            if (!justFinished) {
-                game.switchTurn();
-                game.setTurnStartTimeMillis(System.currentTimeMillis()); // Yeni turun başlangıç zamanı
-            } else {
-                // Oyun bittiyse zamanlayıcıyı durdur
-                game.setTurnStartTimeMillis(0);
-            }
-
-            // 8. Kaydet ve Yayınla
-            Game savedGame = gameRepository.save(game);
-            webSocketController.broadcastGameUpdate(savedGame);
-            return savedGame;
+        if (game.getStatus() != IN_PROGRESS) {
+            log.warn("Invalid move: Game {} is not IN_PROGRESS (status: {}). Player: {}", gameId, game.getStatus(), playerId);
+            return null;
+        }
+        if (!game.getCurrentTurn().equals(playerId)) {
+            log.warn("Invalid move: Not player {}'s turn in game {}. Current turn: {}", playerId, gameId, game.getCurrentTurn());
+            return null;
         }
 
-        return null; // Oyun bulunamadı
+        Player activePlayer = game.getPlayerById(playerId);
+        if (activePlayer == null) {
+            log.error("Player {} not found in game {} during makeMove", playerId, gameId);
+            return null;
+        }
+
+        BoardService.RevealResult revealResult = boardService.revealCell(game, playerId, row, col);
+
+        if (!revealResult.moveSuccess) {
+            log.warn("Invalid move logic detected by BoardService for Player {} at ({}, {}) in Game {}", playerId, row, col, gameId);
+            return null;
+        }
+
+        long timeNowAfterMove = System.currentTimeMillis();
+        long timeSpentThisTurn = timeNowAfterMove - game.getTurnStartTimeMillis();
+
+        String message = "";
+        String penaltyMessage = "";
+
+        if (revealResult.revealedOpponentFlagOwnerId != null) {
+            Player opponent = game.getPlayerById(revealResult.revealedOpponentFlagOwnerId);
+            if (opponent != null) {
+                int previousOpponentScore = opponent.getScore();
+                opponent.decreaseScore(1);
+                int scoreChange = opponent.getScore() - previousOpponentScore;
+                if (scoreChange < 0) {
+                    penaltyMessage = " Rakip (" + opponent.getUsername() + ") yanlış bayraktan " + scoreChange + " puan kaybetti.";
+                } else {
+                    penaltyMessage = " Rakip (" + opponent.getUsername() + ") yanlış bayrak açtı (skoru zaten 0 idi).";
+                }
+            }
+        }
+
+        if (revealResult.mineHit) {
+            message = activePlayer.getUsername() + " bir mayına bastı! (0 Puan)";
+            log.info("Player {} hit a mine in game {}. Turn passes.", activePlayer.getUsername(), gameId);
+        } else {
+            int pointsGained = revealResult.pointsGained;
+            if (pointsGained > 0) {
+                int previousPlayerScore = activePlayer.getScore();
+                activePlayer.increaseScore(pointsGained);
+                message = activePlayer.getUsername() + " " + (activePlayer.getScore() - previousPlayerScore) + " puan değerinde bir hücre açtı.";
+            } else {
+                message = activePlayer.getUsername() + " güvenli bir bölge açtı.";
+            }
+        }
+        if (!penaltyMessage.isEmpty()) {
+            message += penaltyMessage;
+        }
+        game.setLastEventMessage(message);
+
+        game.setLastMoveRow(row);
+        game.setLastMoveCol(col);
+
+        boolean isPlayer1 = activePlayer.getId().equals(game.getPlayers().get(0).getId());
+        if (isPlayer1) {
+            long newTimeLeft = game.getPlayer1TimeLeftMillis() - timeSpentThisTurn;
+            game.setPlayer1TimeLeftMillis(Math.max(0, newTimeLeft));
+        } else {
+            long newTimeLeft = game.getPlayer2TimeLeftMillis() - timeSpentThisTurn;
+            game.setPlayer2TimeLeftMillis(Math.max(0, newTimeLeft));
+        }
+
+        boolean justFinished = false;
+        if (boardService.isGameFinished(game.getBoard(), game.getMineCount())) {
+            checkAndUpdateGameOverNormal(game);
+            justFinished = game.isGameOver();
+        }
+        
+        if (!justFinished && (game.getPlayer1TimeLeftMillis() <= 0 || game.getPlayer2TimeLeftMillis() <= 0)) {
+            handleTimeout(game);
+            justFinished = game.isGameOver();
+        }
+
+        if (!justFinished) {
+            game.switchTurn();
+            game.setTurnStartTimeMillis(System.currentTimeMillis());
+        } else {
+            game.setTurnStartTimeMillis(0);
+        }
+
+        Game savedGame = gameRepository.save(game);
+        webSocketController.broadcastGameUpdate(savedGame);
+        return savedGame;
     }
 
-    // Yeni metod: Bayrak durumunu değiştir
     public Game toggleFlag(String gameId, String playerId, int row, int col) {
         Optional<Game> gameOptional = gameRepository.findById(gameId);
 
+        if (gameOptional.isEmpty()) return null;
+        Game game = gameOptional.get();
+
+        if (game.getStatus() != IN_PROGRESS) {
+            log.warn("Cannot toggle flag in game {}: Game is not IN_PROGRESS (status: {}). Player: {}", gameId, game.getStatus(), playerId);
+            return game;
+        }
+
+        boolean flagToggled = game.toggleFlag(playerId, row, col);
+
+        if (flagToggled) {
+            log.info("Player {} toggled flag at ({}, {}) in Game {}", playerId, row, col, gameId);
+            Game savedGame = gameRepository.save(game);
+            webSocketController.broadcastGameUpdate(savedGame);
+            return savedGame;
+        } else {
+            log.warn("Flag toggle failed for Player {} at ({}, {}) in Game {} (likely opponent flag)", playerId, row, col, gameId);
+            return game;
+        }
+    }
+
+    public void handlePlayerDisconnect(String gameId, String playerId) {
+        Optional<Game> gameOptional = gameRepository.findById(gameId);
         if (gameOptional.isPresent()) {
             Game game = gameOptional.get();
+            if (game.getStatus() == IN_PROGRESS || game.getStatus() == WAITING_FOR_READY || game.getStatus() == WAITING_FOR_PLAYERS) {
+                Player disconnectedPlayer = game.getPlayerById(playerId);
+                Player remainingPlayer = game.getPlayers().stream()
+                                             .filter(p -> !p.getId().equals(playerId))
+                                             .findFirst().orElse(null);
 
-            if (game.isGameOver()) {
-                log.warn("Cannot toggle flag in game {}: Game is over.", gameId);
-                return game;
-            }
-            // TODO: Sırası olmayan oyuncu bayrak değiştirebilir mi? Kurala bak.
-            // Kurallar: Bayrak koymak sırayı değiştirmez, zamanı etkilemez. Sıra kontrolü gereksiz.
-            
-            boolean flagToggled = game.toggleFlag(playerId, row, col);
+                log.info("Player {} disconnected from game {}", disconnectedPlayer != null ? disconnectedPlayer.getUsername() : playerId, gameId);
 
-            if (flagToggled) {
-                log.info("Player {} toggled flag at ({}, {}) in Game {}", playerId, row, col, gameId);
+                if (remainingPlayer != null) {
+                    game.setStatus(GAME_OVER);
+                    game.setWinnerId(remainingPlayer.getId());
+                    game.setTurnStartTimeMillis(0);
+                    game.setLastEventMessage((disconnectedPlayer != null ? disconnectedPlayer.getUsername() : "Rakip") + " bağlantısı koptu. Kazanan: " + remainingPlayer.getUsername());
+                    log.info("Game {} ended due to disconnect. Winner: {}", gameId, remainingPlayer.getUsername());
+                } else {
+                    game.setStatus(GAME_OVER);
+                    game.setLastEventMessage((disconnectedPlayer != null ? disconnectedPlayer.getUsername() : "Oyuncu") + " bağlantısı koptu. Oyun bitti.");
+                    log.info("Game {} ended due to disconnect. No remaining player.", gameId);
+                }
                 Game savedGame = gameRepository.save(game);
                 webSocketController.broadcastGameUpdate(savedGame);
-                return savedGame;
-            } else {
-                // Bayrak değiştirilemedi (örn: rakip bayrağı)
-                log.warn("Flag toggle failed for Player {} at ({}, {}) in Game {} (likely opponent flag)", playerId, row, col, gameId);
-                return game; // Durum değişmedi, mevcut oyunu döndür
             }
-        }
-        log.error("Game not found with ID: {} while trying to toggle flag", gameId);
-        return null;
-    }
-
-    // Oyuncu bağlantısı kesildiğinde çağrılacak yeni metod
-    public void handlePlayerDisconnect(String gameId, String playerId) {
-        log.info("Handling disconnect for Player {} in Game {}", playerId, gameId);
-        Optional<Game> gameOptional = gameRepository.findById(gameId);
-
-        if (gameOptional.isPresent()) {
-            Game game = gameOptional.get();
-            boolean wasGameOver = game.isGameOver(); // Oyunun önceki durumunu al
-
-            Player disconnectedPlayer = game.getPlayerById(playerId);
-
-            if (disconnectedPlayer != null) {
-                game.getPlayers().remove(disconnectedPlayer);
-                log.info("Player {} removed from game {}. Remaining players: {}",
-                         playerId, gameId, game.getPlayers().size());
-
-                if (game.getPlayers().isEmpty()) {
-                    log.info("Game {} is empty after disconnect. Deleting room.", gameId);
-                    gameRepository.deleteById(gameId);
-                    return;
-                }
-
-                if (!wasGameOver && game.getPlayers().size() == 1) {
-                    log.info("Game {} ending due to disconnect. Remaining player wins.", gameId);
-                    game.setGameOver(true);
-                    game.setTurnStartTimeMillis(0); // Zamanlayıcıyı durdur
-                    Player winner = game.getPlayers().get(0); // Kalan tek oyuncu kazanır
-                    game.setWinnerId(winner.getId()); // Kazanan ID'sini ayarla
-                    String message = disconnectedPlayer.getUsername() + " bağlantısı koptu. Kazanan: " + winner.getUsername();
-                    game.setLastEventMessage(message);
-                    Game savedGame = gameRepository.save(game);
-                    webSocketController.broadcastGameUpdate(savedGame);
-                } else if (!wasGameOver) {
-                    if(game.getCurrentTurn().equals(disconnectedPlayer.getId())) {
-                        game.switchTurn(); // Sırayı değiştirir ve turnStartTime'ı ayarlar
-                    }
-                    Game savedGame = gameRepository.save(game);
-                    webSocketController.broadcastGameUpdate(savedGame);
-                    log.info("Game {} updated after player {} disconnect. Player list changed.", gameId, playerId);
-                }
-                // Oyun zaten bitmişse bir şey yapmaya gerek yok, sadece oyuncu çıkarıldı.
-
-            } else {
-                log.warn("Player {} not found in game {} during disconnect handling.", playerId, gameId);
-            }
-        } else {
-            log.warn("Game {} not found while handling disconnect for player {}.", gameId, playerId);
         }
     }
 
-    // Oyunun normal bitişini kontrol eden yardımcı metod (mayınlar bitti mi?)
     private void checkAndUpdateGameOverNormal(Game game) {
-        // Bu metod sadece tüm güvenli hücrelerin açıldığı normal bitiş durumunu kontrol eder.
-        // Mayına basma durumu makeMove içinde ele alınır.
-        if (!game.isGameOver() && boardService.isGameFinished(game.getBoard(), game.getMineCount())) {
-            game.setGameOver(true);
-            game.setTurnStartTimeMillis(0);
-            log.info("Game {} finished normally (all safe cells revealed).", game.getId());
+        if (game.getStatus() != IN_PROGRESS) return;
 
-            String winnerId = null;
-            String message;
+        if (boardService.isGameFinished(game.getBoard(), game.getMineCount())) {
+            game.setStatus(GAME_OVER);
+            game.setTurnStartTimeMillis(0);
+            
             if (game.getPlayers().size() == 2) {
                 Player p1 = game.getPlayers().get(0);
                 Player p2 = game.getPlayers().get(1);
                 if (p1.getScore() > p2.getScore()) {
-                    winnerId = p1.getId();
-                    message = "Oyun Bitti! Tüm güvenli hücreler açıldı. Kazanan: " + p1.getUsername();
+                    game.setWinnerId(p1.getId());
+                    game.setLastEventMessage("Tüm güvenli hücreler açıldı! Kazanan: " + p1.getUsername());
+                    log.info("Game {} ended normally. Winner: {} with score: {}.", game.getId(), p1.getUsername(), p1.getScore());
                 } else if (p2.getScore() > p1.getScore()) {
-                    winnerId = p2.getId();
-                    message = "Oyun Bitti! Tüm güvenli hücreler açıldı. Kazanan: " + p2.getUsername();
+                    game.setWinnerId(p2.getId());
+                    game.setLastEventMessage("Tüm güvenli hücreler açıldı! Kazanan: " + p2.getUsername());
+                    log.info("Game {} ended normally. Winner: {} with score: {}.", game.getId(), p2.getUsername(), p2.getScore());
                 } else {
-                    message = "Oyun Bitti! Tüm güvenli hücreler açıldı. Skorlar berabere!";
+                    game.setWinnerId(null);
+                    game.setLastEventMessage("Tüm güvenli hücreler açıldı! Oyun berabere bitti.");
+                    log.info("Game {} ended normally. It's a tie! Score: {}.", game.getId(), p1.getScore());
                 }
-            } else if (game.getPlayers().size() == 1) {
-                winnerId = game.getPlayers().get(0).getId();
-                message = "Oyun Bitti! Tüm güvenli hücreler açıldı.";
             } else {
-                message = "Oyun Bitti!";
+                Player winner = game.getPlayers().isEmpty() ? null : game.getPlayers().get(0);
+                if (winner != null) {
+                    game.setWinnerId(winner.getId());
+                    game.setLastEventMessage("Tüm güvenli hücreler açıldı! Kazandın!");
+                    log.info("Game {} ended normally. Single player {} wins.", game.getId(), winner.getUsername());
+                } else {
+                    game.setLastEventMessage("Tüm güvenli hücreler açıldı! Oyun bitti.");
+                    log.info("Game {} ended normally. No players found?");
+                }
             }
-
-            game.setWinnerId(winnerId);
-            game.setLastEventMessage(message);
         }
     }
 
-    // Zaman aşımı kontrolü için zamanlanmış görev (3 saniyede 1 çalışır)
-    @Scheduled(fixedRate = 3000)
+    @Scheduled(fixedRate = 1000)
     public void checkActiveGameTimers() {
-        List<Game> gamesToCheck = gameRepository.findActiveGamesForTimerCheck();
         long currentTime = System.currentTimeMillis();
+        List<Game> activeGames = gameRepository.findAll().stream()
+                .filter(game -> game.getStatus() == IN_PROGRESS)
+                .collect(Collectors.toList());
 
-        for (Game game : gamesToCheck) {
-            // Oyunun bu döngü sırasında başka bir thread tarafından bitirilmediğinden emin ol (opsiyonel double check)
-            if (game.isGameOver()) continue;
+        for (Game game : activeGames) {
+            if (game.getTurnStartTimeMillis() <= 0) continue;
 
-            String currentPlayerId = game.getCurrentTurn();
-            Player currentPlayer = game.getPlayerById(currentPlayerId);
-            if (currentPlayer == null) {
-                log.warn("Timer check: Player {} not found in game {}. Skipping timer check for this game.", currentPlayerId, game.getId());
-                continue;
-            }
+            boolean player1TimedOut = false;
+            boolean player2TimedOut = false;
+            long timeElapsedSinceTurnStart = currentTime - game.getTurnStartTimeMillis();
 
-            long timeSpentThisTurn = currentTime - game.getTurnStartTimeMillis();
-            long timeLeft;
-            boolean isPlayer1Turn = currentPlayer.getId().equals(game.getPlayers().get(0).getId());
-
-            if (isPlayer1Turn) {
-                timeLeft = game.getPlayer1TimeLeftMillis() - timeSpentThisTurn;
-            } else {
-                timeLeft = game.getPlayer2TimeLeftMillis() - timeSpentThisTurn;
-            }
-
-            if (timeLeft <= 0) {
-                log.info("Time ran out for player {} in game {}. Calculating final scores...", currentPlayer.getUsername(), game.getId());
-                game.setGameOver(true);
-                game.setTurnStartTimeMillis(0);
-
-                // Süresi biten oyuncunun zamanını sıfırla
-                Player opponent;
-                String timedOutPlayerUsername = currentPlayer.getUsername();
-                if (isPlayer1Turn) {
-                    game.setPlayer1TimeLeftMillis(0);
-                    opponent = game.getPlayers().get(1);
-                } else {
-                    game.setPlayer2TimeLeftMillis(0);
-                    opponent = game.getPlayers().get(0);
-                }
-
-                // Kalan güvenli hücrelerin puanını hesapla
-                int remainingScore = 0;
-                if (opponent != null) { // Rakip varsa puanı ona ekle
-                    log.debug("Calculating remaining safe score for opponent {}", opponent.getUsername());
-                    for (List<Cell> row : game.getBoard()) {
-                        for (Cell cell : row) {
-                            if (!cell.isRevealed() && !cell.isMine()) {
-                                remainingScore += cell.getAdjacentMines();
-                            }
-                        }
+            if (game.getPlayers().size() >= 1) {
+                Player p1 = game.getPlayers().get(0);
+                if (game.getCurrentTurn().equals(p1.getId())) {
+                    if ((game.getPlayer1TimeLeftMillis() - timeElapsedSinceTurnStart) <= 0) {
+                        player1TimedOut = true;
+                        game.setPlayer1TimeLeftMillis(0);
                     }
-                    log.debug("Remaining safe score: {}. Adding to {}'s score.", remainingScore, opponent.getUsername());
-                    opponent.increaseScore(remainingScore); // Puanı rakibe ekle
-                } else {
-                     log.warn("Opponent not found for timed out player {} in game {}. Cannot add remaining score.", timedOutPlayerUsername, game.getId());
                 }
-
-                // Nihai skorlara göre kazananı belirle
-                String winnerId = null;
-                String message;
-                int currentPlayerScore = currentPlayer.getScore();
-                int opponentScore = (opponent != null) ? opponent.getScore() : -1; // Rakip yoksa -1 gibi geçersiz skor
-
-                log.info("Final scores in game {}: {} = {}, {} = {}", game.getId(), timedOutPlayerUsername, currentPlayerScore, (opponent != null ? opponent.getUsername() : "N/A"), opponentScore);
-
-                if (opponent == null) { // Rakip yoksa (bağlantı kopmuş olabilir)
-                    message = timedOutPlayerUsername + " süresi doldu. Rakip bulunamadığından oyun bitti.";
-                    winnerId = null; // Kazanan yok
-                } else if (opponentScore > currentPlayerScore) {
-                    winnerId = opponent.getId();
-                    message = timedOutPlayerUsername + " süresi doldu! Kalan hücrelerden " + remainingScore + " puan " + opponent.getUsername() + " oyuncusuna eklendi. Kazanan: " + opponent.getUsername();
-                } else if (currentPlayerScore > opponentScore) {
-                    winnerId = currentPlayer.getId();
-                    message = timedOutPlayerUsername + " süresi doldu! Kalan hücrelerden " + remainingScore + " puan " + opponent.getUsername() + " oyuncusuna eklendi, ancak yetmedi. Kazanan: " + timedOutPlayerUsername;
-                } else {
-                    // Berabere
-                    winnerId = null;
-                    message = timedOutPlayerUsername + " süresi doldu! Kalan hücrelerden " + remainingScore + " puan " + opponent.getUsername() + " oyuncusuna eklendi. Skorlar berabere!";
+            }
+            if (game.getPlayers().size() >= 2) {
+                Player p2 = game.getPlayers().get(1);
+                if (game.getCurrentTurn().equals(p2.getId())) {
+                    if ((game.getPlayer2TimeLeftMillis() - timeElapsedSinceTurnStart) <= 0) {
+                        player2TimedOut = true;
+                        game.setPlayer2TimeLeftMillis(0);
+                    }
                 }
+            }
 
-                game.setWinnerId(winnerId);
-                game.setLastEventMessage(message);
-
+            if (player1TimedOut || player2TimedOut) {
+                log.info("Timeout detected in game {}. Player1: {}, Player2: {}. Handling timeout.", game.getId(), player1TimedOut, player2TimedOut);
+                handleTimeout(game);
                 Game savedGame = gameRepository.save(game);
                 webSocketController.broadcastGameUpdate(savedGame);
             }
         }
+    }
+
+    private void handleTimeout(Game game) {
+        if (game.getStatus() != IN_PROGRESS) return;
+
+        Player timedOutPlayer = null;
+        Player remainingPlayer = null;
+
+        if (game.getPlayer1TimeLeftMillis() <= 0) {
+            if (game.getPlayers().size() > 0) timedOutPlayer = game.getPlayers().get(0);
+            if (game.getPlayers().size() > 1) remainingPlayer = game.getPlayers().get(1);
+        } else if (game.getPlayer2TimeLeftMillis() <= 0) {
+            if (game.getPlayers().size() > 1) timedOutPlayer = game.getPlayers().get(1);
+            if (game.getPlayers().size() > 0) remainingPlayer = game.getPlayers().get(0);
+        }
+
+        if (timedOutPlayer == null) {
+            log.error("handleTimeout called for game {} but no timed out player found.", game.getId());
+            return;
+        }
+
+        log.info("Player {} timed out in game {}", timedOutPlayer.getUsername(), game.getId());
+        game.setStatus(GAME_OVER);
+        game.setTurnStartTimeMillis(0);
+
+        int remainingPoints = boardService.calculateRemainingPoints(game.getBoard());
+        if (remainingPlayer != null) {
+            log.info("Adding {} remaining points to player {}", remainingPoints, remainingPlayer.getUsername());
+            remainingPlayer.increaseScore(remainingPoints);
+        } else {
+            log.warn("No remaining player found in game {} to add points after timeout.", game.getId());
+        }
+
+        if (remainingPlayer != null && remainingPlayer.getScore() > timedOutPlayer.getScore()) {
+            game.setWinnerId(remainingPlayer.getId());
+            game.setLastEventMessage(timedOutPlayer.getUsername() + " süresi bitti! Kalan puanlar (" + remainingPoints + ") " + remainingPlayer.getUsername() + " adlı oyuncuya eklendi. Kazanan: " + remainingPlayer.getUsername());
+        } else if (remainingPlayer != null && timedOutPlayer.getScore() > remainingPlayer.getScore()) {
+            game.setWinnerId(timedOutPlayer.getId());
+            game.setLastEventMessage(timedOutPlayer.getUsername() + " süresi bitti! Ancak skoru daha yüksek olduğu için kazandı. Kazanan: " + timedOutPlayer.getUsername());
+        } else {
+            game.setWinnerId(null);
+            game.setLastEventMessage(timedOutPlayer.getUsername() + " süresi bitti! Kalan puanlar eklendi. Oyun berabere bitti.");
+        }
+        log.info("Game {} ended due to timeout. Timed out: {}, Remaining: {}, Winner: {}", game.getId(), timedOutPlayer.getUsername(), (remainingPlayer != null ? remainingPlayer.getUsername() : "None"), game.getWinnerId());
     }
 } 
