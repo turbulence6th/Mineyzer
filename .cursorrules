@@ -17,9 +17,21 @@ Oyunun Son Kuralları:
     *   Bir oyuncunun toplam süresi bittiğinde. Oyun biter, süresi biten oyuncunun zamanı sıfırlanır. Açılmamış tüm güvenli hücrelerin puan değerleri hesaplanır ve süresi bitmeyen rakibin skoruna eklenir. Son skorlara göre en yüksek puana sahip oyuncu kazanır, eşitlik durumunda berabere biter.
     *   Bir oyuncunun bağlantısı koptuğunda. Oyunda kalan oyuncu kazanır.
 
-Kod Yapısı:
-frontend dizininde react typescript ile arayüzü yazılacak.
-backend dizininde spring boot ile sunucusu yazılacak.
+Kod Yapısı ve Mimari Prensip:
+*   **Mimari:** Frontend (React) sadece sunum katmanı (presentation layer) olarak görev yapacak, tüm oyun mantığı, durum yönetimi ve kural uygulama işlemleri backend'de (Spring Boot) merkezileştirilecektir. Frontend, kullanıcı etkileşimlerini backend'e iletecek ve backend'den gelen güncel durumu ekrana yansıtacaktır.
+*   **Frontend (`frontend` dizini):** `react` ve `typescript` kullanılacaktır.
+    *   `react-router-dom` ile yönlendirme (routing) yönetilecek (`/` ve `/:gameId` rotaları).
+    *   Ana yönlendirme ve genel oyun durumu (`App.tsx` içinde) yönetilecek (backend'den gelen verilere göre).
+    *   `GameSetup.tsx` kullanıcı adı girişini ve URL'ye göre hangi alt bileşenin gösterileceğini belirleyecek.
+    *   `CreateOrJoinGame.tsx` yeni oyun oluşturma ve mevcut oyunları listeleme/katılma arayüzünü (`/` rotası için) içerecek (backend ile iletişim kurarak).
+    *   `JoinGameById.tsx` belirli bir oyuna (`/:gameId` rotası) katılma arayüzünü içerecek (backend ile iletişim kurarak).
+    *   `GameBoard.tsx` oyun tahtasını, skorları, süreleri ve diğer oyun içi bilgileri (backend'den gelen verilere göre) gösterecek ve etkileşimleri backend'e iletecek.
+    *   WebSocket bağlantısı (`WebSocketService.ts`) backend'den gelen güncellemeleri almak için kullanılacak.
+    *   Backend ile API iletişimi (`GameService.ts`) üzerinden yapılacak (istek göndermek için).
+*   **Backend (`backend` dizini):** `spring boot` kullanılacaktır.
+    *   Tüm oyun mantığını, kurallarını, durum takibini (tahta, skorlar, süreler, sıra vb.) yönetecek.
+    *   API uç noktaları (oyun oluşturma, katılma, hamle yapma, bayrak koyma vb.) sağlayacak.
+    *   WebSocket üzerinden oyun durumu güncellemelerini ilgili istemcilere anlık olarak gönderecek.
 
 CMD komutları çalıştırmadan önce bana sor otomatik çalıştırma yapma.
 Komutlar windowsta powershell'de çalıştırılacak.
