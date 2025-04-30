@@ -245,6 +245,16 @@ public class GameService {
             return game;
         }
 
+        if (!game.getCurrentTurn().equals(playerId)) {
+            log.warn("Cannot toggle flag: Not player {}'s turn in game {}. Current turn: {}", playerId, gameId, game.getCurrentTurn());
+            return game;
+        }
+
+        if (row < 0 || row >= game.getRows() || col < 0 || col >= game.getColumns()) {
+            log.warn("Cannot toggle flag: Invalid coordinates ({}, {}) for game {}", row, col, gameId);
+            return game;
+        }
+
         boolean flagToggled = game.toggleFlag(playerId, row, col);
 
         if (flagToggled) {
@@ -253,7 +263,7 @@ public class GameService {
             webSocketController.broadcastGameUpdate(savedGame);
             return savedGame;
         } else {
-            log.warn("Flag toggle failed for Player {} at ({}, {}) in Game {} (likely opponent flag)", playerId, row, col, gameId);
+            log.warn("Flag toggle failed for Player {} at ({}, {}) in Game {}. No change sent.", playerId, row, col, gameId);
             return game;
         }
     }

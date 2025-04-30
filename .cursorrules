@@ -5,6 +5,7 @@ Oyunun Son Kuralları:
 *   Her oyuncunun seçilen zorluğa göre belirlenen bir toplam süresi vardır (örn: 8x8 için 30sn, 16x16 için 1.5dk). Süre sadece oyuncunun kendi sırası geldiğinde, hamlesini yapana kadar azalır.
 *   Kapalı bir hücreye sağ tıklayarak bayrak koyulabilir/kaldırılabilir.
     *   Oyuncular sadece kendi koydukları bayrakları kaldırabilir.
+    *   **Sadece sırası gelen oyuncu bayrak koyabilir.**
     *   Bayraklar her iki oyuncu tarafından da görülür ancak kimin koyduğuna göre kenarlık rengi farklıdır (1. Oyuncu: Mavi, 2. Oyuncu: Kırmızı).
     *   Oyuncular kendi bayrakladıkları hücreleri açamazlar.
     *   Bayrak koymak/kaldırmak sırayı değiştirmez ve zamanlayıcıyı etkilemez.
