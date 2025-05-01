@@ -366,7 +366,7 @@ public class GameService {
         }
     }
 
-    private void handleTimeout(Game game) {
+    void handleTimeout(Game game) {
         if (game.getStatus() != IN_PROGRESS) return;
 
         Player timedOutPlayer = null;
